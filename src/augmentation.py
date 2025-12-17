@@ -91,7 +91,9 @@ def run_one_experiment(X, y, persons, tr_idx, te_idx, experiment_name, args,
            'confusion_matrix': cm.tolist(), 'history': history.history}
 
     # save per-experiment json
-    outpath = f"results_{experiment_name}.json"
+    res_dir = 'results'
+    os.makedirs(res_dir, exist_ok=True)
+    outpath = os.path.join(res_dir, f"results_{experiment_name}.json")
     with open(outpath, 'w') as f:
         json.dump(out, f, indent=2)
     print(f"Saved results to {outpath}")
