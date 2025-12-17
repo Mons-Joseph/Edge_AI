@@ -28,14 +28,22 @@ from scipy.signal import sosfiltfilt, butter
 # -------------------------
 # Helpers: label parsing
 # -------------------------
-def default_label_from_filename(fname: str) -> int:
+def default_label_from_filename(path: str) -> int:
     """
-    Simple heuristic: if 'valid' in filename -> 1 else 0.
-    Case-insensitive.
-    You may supply your own label parser if your filenames differ.
+    Robust binary label parser:
+      - returns 0 for invalid samples (filename contains 'invalid')
+      - returns 1 for valid samples (filename contains 'valid' but NOT 'invalid')
+      - raises ValueError if neither token is found
+
+    Checks are case-insensitive and use substring detection with the correct order.
     """
-    base = os.path.basename(fname).lower()
-    return 1 if "valid" in base else 0
+    base = os.path.basename(path).lower()
+    if "invalid" in base:
+        return 0
+    if "valid" in base:
+        return 1
+    raise ValueError(f"Cannot infer label from filename: {path}")
+
 
 # -------------------------
 # Read CSV to IQ 4-channel array
