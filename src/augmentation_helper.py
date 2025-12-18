@@ -16,10 +16,11 @@ from scipy import signal
 from scipy.ndimage import zoom
 import math
 import random
-
+from plots import plot_time_augmentation, plot_freq_augmentation
 # -------------------------
 # Time-domain: stretch/compress
 # -------------------------
+time_augmetation_plotted = False
 def time_stretch_time_domain(segment: np.ndarray, gamma_t: float) -> np.ndarray:
     """
     Stretch/compress time-domain IQ segment and resample back to original length.
@@ -27,10 +28,22 @@ def time_stretch_time_domain(segment: np.ndarray, gamma_t: float) -> np.ndarray:
     - gamma_t: 0.8..1.2 typically
     Returns (L, C)
     """
+    global time_augmetation_plotted
+
     L, C = segment.shape
     new_len = max(1, int(round(L * gamma_t)))
     stretched = signal.resample(segment, new_len, axis=0)
     out = signal.resample(stretched, L, axis=0)
+
+    if(not time_augmetation_plotted):
+        plot_time_augmentation(
+            segment=segment,
+            gamma_t=gamma_t,
+            stretched=stretched
+        )
+        time_augmetation_plotted = True
+
+
     return out.astype(np.float32)
 
 # -------------------------
@@ -88,7 +101,7 @@ def spectrogram_to_pseudo_time(spec: np.ndarray, L_target: int, fs: float = 100.
 # -------------------------
 # Dataset augmentation generator (precompute variants)
 # -------------------------
-
+plotted_freq_augmentation = False
 def generate_augmented_dataset(X: np.ndarray, y: np.ndarray,
                                n_per_sample: int = 2,
                                time_range: tuple = (0.9, 1.1),
@@ -103,6 +116,8 @@ def generate_augmented_dataset(X: np.ndarray, y: np.ndarray,
     For each sample in X, create `n_per_sample` augmented variants using the enabled methods.
     Returns X_aug (original + variants), y_aug.
     """
+    global plotted_freq_augmentation
+
     rng = np.random.RandomState(seed)
     np.random.seed(seed)
     random.seed(seed)
@@ -132,6 +147,9 @@ def generate_augmented_dataset(X: np.ndarray, y: np.ndarray,
                 gamma_f = float(rng.uniform(*freq_range))
                 spec = segment_to_spectrogram(x, fs=fs)
                 spec2 = doppler_frequency_rescale_spectrogram(spec, gamma_f)
+                if(not plotted_freq_augmentation):
+                    plot_freq_augmentation(gamma_f= gamma_f,spec_orig= spec,spec_aug= spec2,)
+                    plotted_freq_augmentation = True
                 x = spectrogram_to_pseudo_time(spec2, L_target=L, fs=fs)
             X_aug[idx] = x
             y_aug[idx] = y[i]

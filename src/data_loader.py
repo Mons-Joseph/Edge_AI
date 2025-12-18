@@ -24,7 +24,10 @@ import numpy as np
 import pandas as pd
 from typing import Tuple, List, Optional, Callable
 from scipy.signal import sosfiltfilt, butter
+from plots import plot_raw_signal, plot_energy_segmentation
 
+
+plotted = False
 # -------------------------
 # Helpers: label parsing
 # -------------------------
@@ -118,6 +121,8 @@ def energy_peak_segment(X: np.ndarray,
     - frame: smoothing window for energy (samples)
     - min_energy_ratio: segment energy must be >= ratio * total_energy else return None
     """
+    global plotted
+    
     if X.shape[0] < 8:
         return None
     mag = np.sqrt(np.sum(X**2, axis=1))  # per-sample magnitude across channels
@@ -130,6 +135,16 @@ def energy_peak_segment(X: np.ndarray,
     peak = int(np.argmax(energy))
     start = peak - L // 2
     end = start + L
+
+    if(not plotted):
+        plot_energy_segmentation(
+            X_full=X,
+            L=L,
+            frame=frame,
+            out_path="figures/fig2_energy_segmentation.png"
+        )
+        plotted = True
+
     # clamp
     if start < 0:
         start = 0
@@ -250,6 +265,11 @@ def build_dataset_from_folder(root_folder: str,
     persons = np.array(persons, dtype=object)
     if verbose:
         print(f"[build_dataset] built dataset: N={len(X)}, window_size={window_size}, channels=4")
+
+    valid_idx = np.where(y == 1)[0][0]
+    invalid_idx = np.where(y == 0)[0][0]
+    plot_raw_signal(X[valid_idx],X[invalid_idx],out_path="figures/fig1_raw_signal.png")
+    
     return X, y, persons, file_paths
 
 # -------------------------

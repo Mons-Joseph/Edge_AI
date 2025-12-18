@@ -34,6 +34,7 @@ from cnn_baseline import make_cnn_1d, set_seed
 from augmentation_helper import generate_augmented_dataset
 
 import tensorflow as tf
+from plots import plot_confusion_matrix
 
 # -------------------------
 # Experiment runner
@@ -97,6 +98,10 @@ def run_one_experiment(X, y, persons, tr_idx, te_idx, experiment_name, args,
     with open(outpath, 'w') as f:
         json.dump(out, f, indent=2)
     print(f"Saved results to {outpath}")
+    
+    plot_path = os.path.join('figures', f"confusion_matrix_{experiment_name}.png")
+    plot_confusion_matrix(y_true=yte, y_pred=y_pred, out_path=plot_path, labels=["Invalid", "Valid"])
+
     return out
 
 
